@@ -1,0 +1,8 @@
+[package]
+name = "hot"
+version = "0.1.0"
+authors = ["Michael Fairley <michaelfairley@gmail.com>"]
+
+[dependencies]
+notify = "*"
+libloading = "*"

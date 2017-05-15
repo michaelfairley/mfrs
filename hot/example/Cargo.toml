@@ -1,0 +1,19 @@
+[package]
+name = "example"
+version = "0.1.0"
+authors = ["Michael Fairley <michaelfairley@gmail.com>"]
+
+[lib]
+crate-type = ["rlib", "dylib"]
+
+[[bin]]
+name = "main"
+
+[dependencies]
+hot = { path = "..", optional = true }
+glium = "*"
+glutin = "*"
+
+[features]
+hotload = ["hot"]
+default = ["hotload"]
