@@ -1,4 +1,4 @@
-# mfrs - Michael Fairley's Rust utilities
+# mfrs - My personal Rust libraries
 
 This is an ever growing junk drawer of code I use to make my games.
 
