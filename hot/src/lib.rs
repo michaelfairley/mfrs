@@ -40,19 +40,26 @@ impl Library {
   }
 
   pub fn reload(&mut self) {
-    for _ in self.rx.try_recv() {
-      println!("Reloading!");
+    for _ in self.rx.try_recv() { self.do_reload(); }
+  }
 
-      // Most OSes do internal refcounting on dylibs, so this needs to be explicitly dropped
-      // to knock the refcount down to 0 so the old version gets unloaded.
-      mem::drop(self.raw.take());
+  fn do_reload(&mut self) {
+    println!("Reloading!");
 
-      let library = libloading::Library::new(&self.dylib_path).unwrap();
+    // Most OSes do internal refcounting on dylibs, so this needs to be explicitly dropped
+    // to knock the refcount down to 0 so the old version gets unloaded.
+    mem::drop(self.raw.take());
 
-      self.init_fn = self::init_fn(&library);
-      self.tick_fn = self::tick_fn(&library);
-      self.raw = Some(library);
-    }
+    let library = libloading::Library::new(&self.dylib_path).unwrap();
+
+    self.init_fn = self::init_fn(&library);
+    self.tick_fn = self::tick_fn(&library);
+    self.raw = Some(library);
+  }
+
+  pub fn reload_block(&mut self) {
+    self.rx.recv().unwrap();
+    self.do_reload();
   }
 }
 
