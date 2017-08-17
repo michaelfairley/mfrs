@@ -20,6 +20,8 @@ fn main() {
 
     if !continue_ { break 'main; }
   }
+
+  (hot.cleanup_fn)(state);
 }
 
 #[cfg(not(feature = "hotload"))]
@@ -31,4 +33,6 @@ fn main() {
 
     if !continue_ { break 'main; }
   }
+
+  example::cleanup(state);
 }

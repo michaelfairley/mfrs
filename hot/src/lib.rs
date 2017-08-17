@@ -13,6 +13,7 @@ pub struct Library {
   rx: mpsc::Receiver<notify::RawEvent>,
   pub init_fn: libloading::os::unix::Symbol<extern fn() -> Box<State>>,
   pub tick_fn: libloading::os::unix::Symbol<extern fn(&mut State) -> bool>,
+  pub cleanup_fn: libloading::os::unix::Symbol<extern fn(Box<State>)>,
 }
 
 impl Library {
@@ -28,6 +29,7 @@ impl Library {
 
     let init_fn = self::init_fn(&raw);
     let tick_fn = self::tick_fn(&raw);
+    let cleanup_fn = self::cleanup_fn(&raw);
 
     Library {
       dylib_path: dylib_path.to_string(),
@@ -36,6 +38,7 @@ impl Library {
       _watcher: watcher,
       init_fn: init_fn,
       tick_fn: tick_fn,
+      cleanup_fn: cleanup_fn,
     }
   }
 
@@ -54,6 +57,7 @@ impl Library {
 
     self.init_fn = self::init_fn(&library);
     self.tick_fn = self::tick_fn(&library);
+    self.cleanup_fn = self::cleanup_fn(&library);
     self.raw = Some(library);
   }
 
@@ -76,4 +80,8 @@ fn init_fn(library: &libloading::Library) -> libloading::os::unix::Symbol<extern
 
 fn tick_fn(library: &libloading::Library) -> libloading::os::unix::Symbol<extern fn(&mut State) -> bool> {
   unsafe{ library.get::<extern fn(&mut State) -> bool>(b"tick").unwrap().into_raw() }
+}
+
+fn cleanup_fn(library: &libloading::Library) -> libloading::os::unix::Symbol<extern fn(Box<State>)> {
+  unsafe{ library.get::<extern fn(Box<State>)>(b"cleanup").unwrap().into_raw() }
 }

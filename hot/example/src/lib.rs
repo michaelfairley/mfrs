@@ -44,3 +44,6 @@ pub extern "C" fn tick(state: &State) -> bool {
 
   true
 }
+
+pub extern "C" fn cleanup(_state: Box<State>) {
+}

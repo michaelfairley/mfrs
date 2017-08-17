@@ -11,8 +11,8 @@ name = "main"
 
 [dependencies]
 hot = { path = "..", optional = true }
-glium = "*"
-glutin = "*"
+glium = "0.16"
+glutin = "0.7"
 
 [features]
 hotload = ["hot"]
