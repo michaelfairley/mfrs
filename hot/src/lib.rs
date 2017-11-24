@@ -3,11 +3,12 @@ extern crate libloading;
 
 use std::mem;
 use std::sync::mpsc;
+use std::ffi::OsString;
 
 pub struct State();
 
 pub struct Library {
-  dylib_path: String,
+  dylib_path: OsString,
   raw: Option<libloading::Library>,
   _watcher: notify::RecommendedWatcher,
   rx: mpsc::Receiver<notify::RawEvent>,
@@ -17,22 +18,22 @@ pub struct Library {
 }
 
 impl Library {
-  pub fn new(dylib_path: &str) -> Library {
+  pub fn new(dylib_path: OsString) -> Library {
     use notify::Watcher;
 
     let (tx, rx) = mpsc::channel();
     let mut watcher = notify::raw_watcher(tx).unwrap();
 
-    watcher.watch(dylib_path, notify::RecursiveMode::NonRecursive).unwrap();
+    watcher.watch(&dylib_path, notify::RecursiveMode::NonRecursive).unwrap();
 
-    let raw = libloading::Library::new(dylib_path).expect("Couldn't find dylib");
+    let raw = libloading::Library::new(&dylib_path).expect("Couldn't find dylib");
 
     let init_fn = self::init_fn(&raw);
     let tick_fn = self::tick_fn(&raw);
     let cleanup_fn = self::cleanup_fn(&raw);
 
     Library {
-      dylib_path: dylib_path.to_string(),
+      dylib_path: dylib_path,
       raw: Some(raw),
       rx: rx,
       _watcher: watcher,
@@ -49,8 +50,8 @@ impl Library {
   fn do_reload(&mut self) {
     println!("Reloading!");
 
-    // Most OSes do internal refcounting on dylibs, so this needs to be explicitly dropped
-    // to knock the refcount down to 0 so the old version gets unloaded.
+    // Most OSes do internal refcounting on dylibs, so this needs to be explicitly
+    // dropped to knock the refcount down to 0 so the old version gets unloaded.
     mem::drop(self.raw.take());
 
     let library = libloading::Library::new(&self.dylib_path).unwrap();
