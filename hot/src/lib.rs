@@ -1,7 +1,6 @@
 extern crate notify;
 extern crate libloading;
 
-use std::mem;
 use std::sync::mpsc;
 use std::ffi::OsString;
 
@@ -9,12 +8,33 @@ pub struct State();
 
 pub struct Library {
   dylib_path: OsString,
-  raw: Option<libloading::Library>,
   _watcher: notify::RecommendedWatcher,
   rx: mpsc::Receiver<notify::RawEvent>,
+  pub instance: Instance,
+}
+
+pub struct Instance {
+  _raw: libloading::Library,
   pub init_fn: libloading::os::unix::Symbol<extern fn() -> Box<State>>,
   pub tick_fn: libloading::os::unix::Symbol<extern fn(&mut State) -> bool>,
   pub cleanup_fn: libloading::os::unix::Symbol<extern fn(Box<State>)>,
+}
+
+impl Instance {
+  fn load(dylib_path: &OsString) -> Self {
+    let raw = libloading::Library::new(dylib_path).expect("Couldn't find dylib");
+
+    let init_fn = init_fn(&raw);
+    let tick_fn = tick_fn(&raw);
+    let cleanup_fn = cleanup_fn(&raw);
+
+    Self{
+      _raw: raw,
+      init_fn,
+      tick_fn,
+      cleanup_fn,
+    }
+  }
 }
 
 impl Library {
@@ -26,20 +46,13 @@ impl Library {
 
     watcher.watch(&dylib_path, notify::RecursiveMode::NonRecursive).unwrap();
 
-    let raw = libloading::Library::new(&dylib_path).expect("Couldn't find dylib");
-
-    let init_fn = self::init_fn(&raw);
-    let tick_fn = self::tick_fn(&raw);
-    let cleanup_fn = self::cleanup_fn(&raw);
+    let instance = Instance::load(&dylib_path);
 
     Library {
       dylib_path: dylib_path,
-      raw: Some(raw),
+      instance: instance,
       rx: rx,
       _watcher: watcher,
-      init_fn: init_fn,
-      tick_fn: tick_fn,
-      cleanup_fn: cleanup_fn,
     }
   }
 
@@ -50,28 +63,12 @@ impl Library {
   fn do_reload(&mut self) {
     println!("Reloading!");
 
-    // Most OSes do internal refcounting on dylibs, so this needs to be explicitly
-    // dropped to knock the refcount down to 0 so the old version gets unloaded.
-    mem::drop(self.raw.take());
-
-    let library = libloading::Library::new(&self.dylib_path).unwrap();
-
-    self.init_fn = self::init_fn(&library);
-    self.tick_fn = self::tick_fn(&library);
-    self.cleanup_fn = self::cleanup_fn(&library);
-    self.raw = Some(library);
+    self.instance = Instance::load(&self.dylib_path);
   }
 
   pub fn reload_block(&mut self) {
     self.rx.recv().unwrap();
     self.do_reload();
-  }
-}
-
-impl Drop for Library {
-  fn drop(&mut self) {
-    // Workaround for https://github.com/rust-lang/rust/issues/28794
-    mem::forget(self.raw.take());
   }
 }
 

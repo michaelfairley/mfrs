@@ -16,17 +16,17 @@ fn main() {
 
   let mut hot = hot::Library::new(dylib_path);
 
-  let mut state = (hot.init_fn)();
+  let mut state = (hot.instance.init_fn)();
 
   'main: loop {
     hot.reload();
 
-    let continue_ = (hot.tick_fn)(&mut state);
+    let continue_ = (hot.instance.tick_fn)(&mut state);
 
     if !continue_ { break 'main; }
   }
 
-  (hot.cleanup_fn)(state);
+  (hot.instance.cleanup_fn)(state);
 }
 
 #[cfg(not(feature = "hotload"))]
