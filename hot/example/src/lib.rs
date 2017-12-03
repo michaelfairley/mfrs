@@ -2,35 +2,47 @@ extern crate glium;
 extern crate glutin;
 
 pub struct State {
-  display: glium::backend::glutin_backend::GlutinFacade,
+  display: glium::backend::glutin::Display,
+  events_loop: glutin::EventsLoop,
 }
 
 #[no_mangle]
 pub extern "C" fn init() -> Box<State> {
-  use glium::DisplayBuild;
+  let window = glutin::WindowBuilder::new()
+    .with_dimensions(400, 400);
+  let context = glutin::ContextBuilder::new();
+  let events_loop = glutin::EventsLoop::new();
 
-  let display = glutin::WindowBuilder::new()
-    .with_dimensions(400, 400)
-    .build_glium()
-    .unwrap();
+  let display = glium::Display::new(window, context, &events_loop).unwrap();
 
   let state = State {
-    display: display,
+    display,
+    events_loop,
   };
 
   Box::new(state)
 }
 
 #[no_mangle]
-pub extern "C" fn tick(state: &State) -> bool {
-  for event in state.display.poll_events() {
-    match event {
-      glutin::Event::Closed
-        | glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::Escape))
-        => return false,
-      _ => ()
-    }
-  }
+pub extern "C" fn tick(state: &mut State) -> bool {
+  let mut stop = false;
+
+  state.events_loop.poll_events(|event| match event {
+    glutin::Event::WindowEvent { event, .. } => match event {
+      glutin::WindowEvent::Closed => stop = true,
+      glutin::WindowEvent::KeyboardInput { input, .. } => match input.state {
+        glutin::ElementState::Pressed => match input.virtual_keycode {
+          Some(glutin::VirtualKeyCode::Escape) => stop = true,
+          _ => {},
+        },
+        _ => {},
+      },
+      _ => {},
+    },
+    _ => {},
+  });
+
+  if stop { return false; }
 
   {
     use glium::Surface;
@@ -45,5 +57,6 @@ pub extern "C" fn tick(state: &State) -> bool {
   true
 }
 
+#[no_mangle]
 pub extern "C" fn cleanup(_state: Box<State>) {
 }

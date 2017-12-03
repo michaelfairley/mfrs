@@ -7,9 +7,14 @@ extern crate example;
 #[cfg(feature = "hotload")]
 fn main() {
   // This probably needs some tweaking to work on non-Macs.
-  // It'll also need some tweaking if you're running from somewhere other
-  // than your crate's root directory.
-  let mut hot = hot::Library::new("target/debug/libexample.dylib");
+  let dylib_path = {
+    let mut dylib_path = std::env::current_exe().unwrap();
+    dylib_path.pop();
+    dylib_path.push("libexample.dylib");
+    dylib_path.into_os_string()
+  };
+
+  let mut hot = hot::Library::new(dylib_path);
 
   let mut state = (hot.init_fn)();
 

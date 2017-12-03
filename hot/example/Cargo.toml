@@ -4,15 +4,16 @@ version = "0.1.0"
 authors = ["Michael Fairley <michaelfairley@gmail.com>"]
 
 [lib]
-crate-type = ["rlib", "dylib"]
+crate-type = ["rlib", "cdylib"]
 
 [[bin]]
 name = "main"
+path = "src/main.rs"
 
 [dependencies]
 hot = { path = "..", optional = true }
-glium = "0.16"
-glutin = "0.7"
+glium = "*"
+glutin = "*"
 
 [features]
 hotload = ["hot"]
