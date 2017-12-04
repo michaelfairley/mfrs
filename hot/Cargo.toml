@@ -6,3 +6,4 @@ authors = ["Michael Fairley <michaelfairley@gmail.com>"]
 [dependencies]
 notify = "*"
 libloading = "*"
+tempdir = "*"
