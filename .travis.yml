@@ -1,0 +1,11 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+
+script:
+  - cd hot && cargo build --verbose --all
+  - cd hot && cargo test --verbose --all
+  - cd hot/example && cargo build
+  - cd hot/example && cargo build --no-default-features

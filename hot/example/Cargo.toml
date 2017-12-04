@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Michael Fairley <michaelfairley@gmail.com>"]
 
 [lib]
-crate-type = ["rlib", "cdylib"]
+crate-type = ["lib", "cdylib"]
 
 [[bin]]
 name = "main"
